@@ -34,5 +34,6 @@ void main() {
     await sut.auth();
 
     verify(httpClient.request(url: url, method: 'post'));
+    print('teste git');
   });
 }
