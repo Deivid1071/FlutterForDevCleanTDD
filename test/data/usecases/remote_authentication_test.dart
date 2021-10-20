@@ -14,20 +14,20 @@ void main() {
   late RemoteAuthentication sut;
   late HttpClientSpy httpClient;
   late String url;
+  late AuthenticationParams params;
 
   setUp(() {
     httpClient = HttpClientSpy();
     url = faker.internet.httpUrl();
     //sut = system under test
     sut = RemoteAuthentication(httpClient: httpClient, url: url);
+    params = AuthenticationParams(
+        email: faker.internet.email(), secret: faker.internet.password());
   });
   test(
     'Should call Http Client with correct values',
     () async {
-      final params = AuthenticationParams(
-          email: faker.internet.email(), secret: faker.internet.password());
       await sut.auth(params);
-
       verify(
         httpClient.request(
           url: url,
@@ -41,8 +41,6 @@ void main() {
   test(
     'Should throw UnespectError if Http client returns 400',
     () async {
-      final params = AuthenticationParams(
-          email: faker.internet.email(), secret: faker.internet.password());
       when(
         httpClient.request(
           url: url,
