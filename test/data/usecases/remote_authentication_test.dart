@@ -39,7 +39,7 @@ void main() {
   );
 
   test(
-    'Should throw UnespectError if Http client returns 400',
+    'Should throw UnexpectError if Http client returns 400',
     () async {
       when(
         httpClient.request(
@@ -56,7 +56,7 @@ void main() {
   );
 
   test(
-    'Should throw UnespectError if Http client returns 404',
+    'Should throw UnexpectError if Http client returns 404',
     () async {
       when(
         httpClient.request(
@@ -73,7 +73,7 @@ void main() {
   );
 
   test(
-    'Should throw UnespectError if Http client returns 500',
+    'Should throw UnexpectError if Http client returns 500',
     () async {
       when(
         httpClient.request(
@@ -86,6 +86,23 @@ void main() {
       final future = sut.auth(params);
 
       expect(future, throwsA(DomainError.unexpected));
+    },
+  );
+
+  test(
+    'Should throw InvalidCredentialsError if Http client returns 401',
+    () async {
+      when(
+        httpClient.request(
+          url: url,
+          method: 'post',
+          body: {'email': params.email, 'password': params.secret},
+        ),
+      ).thenThrow(HttpError.unauthorized);
+
+      final future = sut.auth(params);
+
+      expect(future, throwsA(DomainError.invalidCredentials));
     },
   );
 }
