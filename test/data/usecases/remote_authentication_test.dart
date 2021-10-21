@@ -124,4 +124,20 @@ void main() {
       expect(account.token, accessToken);
     },
   );
+  test(
+    'Should throw UnexpectedError if HttpClient returns 200  with invalid data',
+    () async {
+      when(
+        httpClient.request(
+          url: url,
+          method: 'post',
+          body: {'email': params.email, 'password': params.secret},
+        ),
+      ).thenAnswer((_) async => {'invalid_data': 'invalid_value'});
+
+      final future = sut.auth(params);
+
+      expect(future, throwsA(DomainError.unexpected));
+    },
+  );
 }
