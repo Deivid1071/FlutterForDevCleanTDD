@@ -1,126 +1,104 @@
 import 'package:faker/faker.dart';
+import 'package:flutter_for_dev_dm/data/http/http.dart';
+import 'package:flutter_for_dev_dm/data/usecases/usecases.dart';
 import 'package:flutter_for_dev_dm/domain/helpers/helpers.dart';
 import 'package:flutter_for_dev_dm/domain/usecases/usecases.dart';
-
-import 'package:flutter_test/flutter_test.dart';
+import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
+import 'package:test/test.dart';
 
-import 'package:flutter_for_dev_dm/data/usecases/usecases.dart';
-import 'package:flutter_for_dev_dm/data/http/http.dart';
+import 'remote_authentication_test.mocks.dart';
 
-class HttpClientSpy extends Mock implements HttpClient {}
-
+@GenerateMocks([HttpClient])
 void main() {
   late RemoteAuthentication sut;
-  late HttpClientSpy httpClient;
+  late MockHttpClient httpClient;
   late String url;
   late AuthenticationParams params;
 
   Map<String, dynamic> mockValidData() =>
       {'accessToken': faker.guid.guid(), 'name': faker.person.name()};
 
-  PostExpectation _mockRequest() => when(
-        httpClient.request(
-          url: url,
-          method: 'post',
-          body: {'email': params.email, 'password': params.secret},
-        ),
-      );
+  PostExpectation mockRequest() => when(httpClient.request(
+      url: anyNamed('url'),
+      method: anyNamed('method'),
+      body: anyNamed('body')));
 
   void mockHttpData(Map<String, dynamic> data) {
-    _mockRequest().thenAnswer((_) async => data);
+    mockRequest().thenAnswer((_) async => data);
   }
 
   void mockHttpError(HttpError error) {
-    _mockRequest().thenThrow(error);
+    mockRequest().thenThrow(error);
   }
 
   setUp(() {
-    httpClient = HttpClientSpy();
+    httpClient = MockHttpClient();
     url = faker.internet.httpUrl();
-    //sut = system under test
     sut = RemoteAuthentication(httpClient: httpClient, url: url);
     params = AuthenticationParams(
         email: faker.internet.email(), secret: faker.internet.password());
     mockHttpData(mockValidData());
   });
-  test(
-    'Should call Http Client with correct values',
-    () async {
-      await sut.auth(params);
-      verify(
-        httpClient.request(
-          url: url,
-          method: 'post',
-          body: {'email': params.email, 'password': params.secret},
-        ),
-      );
-    },
-  );
+
+  test('Should call HttpClient with correct values', () async {
+    await sut.auth(params);
+
+    verify(httpClient.request(
+        url: url,
+        method: 'post',
+        body: {'email': params.email, 'password': params.secret}));
+  });
+
+  test('Should throw UnexpectedError if HttpClient returns 400', () async {
+    mockHttpError(HttpError.badRequest);
+
+    final future = sut.auth(params);
+
+    expect(future, throwsA(DomainError.unexpected));
+  });
+
+  test('Should throw UnexpectedError if HttpClient returns 404', () async {
+    mockHttpError(HttpError.notFound);
+
+    final future = sut.auth(params);
+
+    expect(future, throwsA(DomainError.unexpected));
+  });
+
+  test('Should throw UnexpectedError if HttpClient returns 500', () async {
+    mockHttpError(HttpError.serverError);
+
+    final future = sut.auth(params);
+
+    expect(future, throwsA(DomainError.unexpected));
+  });
+
+  test('Should throw InvalidCredentialsError if HttpClient returns 401',
+      () async {
+    mockHttpError(HttpError.unauthorized);
+
+    final future = sut.auth(params);
+
+    expect(future, throwsA(DomainError.invalidCredentials));
+  });
+
+  test('Should return an Account if HttpClient returns 200', () async {
+    final validData = mockValidData();
+    mockHttpData(validData);
+
+    final account = await sut.auth(params);
+
+    expect(account.token, validData['accessToken']);
+  });
 
   test(
-    'Should throw UnexpectError if Http client returns 400',
-    () async {
-      mockHttpError(HttpError.badRequest);
+      'Should throw UnexpectedError if HttpClient returns 200 with invalid data',
+      () async {
+    mockHttpData({'invalid_key': 'invalid_value'});
 
-      final future = sut.auth(params);
+    final future = sut.auth(params);
 
-      expect(future, throwsA(DomainError.unexpected));
-    },
-  );
-
-  test(
-    'Should throw UnexpectError if Http client returns 404',
-    () async {
-      mockHttpError(HttpError.notFound);
-
-      final future = sut.auth(params);
-
-      expect(future, throwsA(DomainError.unexpected));
-    },
-  );
-
-  test(
-    'Should throw UnexpectError if Http client returns 500',
-    () async {
-      mockHttpError(HttpError.serverError);
-
-      final future = sut.auth(params);
-
-      expect(future, throwsA(DomainError.unexpected));
-    },
-  );
-
-  test(
-    'Should throw InvalidCredentialsError if Http client returns 401',
-    () async {
-      mockHttpError(HttpError.unauthorized);
-
-      final future = sut.auth(params);
-
-      expect(future, throwsA(DomainError.invalidCredentials));
-    },
-  );
-
-  test(
-    'Should return an Account if HttpClient returns 200',
-    () async {
-      final validData = mockValidData();
-      mockHttpData(validData);
-
-      final account = await sut.auth(params);
-
-      expect(account.token, validData['accessToken']);
-    },
-  );
-  test(
-    'Should throw UnexpectedError if HttpClient returns 200  with invalid data',
-    () async {
-      mockHttpData({'invalid_data': 'invalid_value'});
-
-      final future = sut.auth(params);
-
-      expect(future, throwsA(DomainError.unexpected));
-    },
-  );
+    expect(future, throwsA(DomainError.unexpected));
+  });
 }
