@@ -13,12 +13,16 @@ import 'login_page_test.mocks.dart';
 main() {
   late LoginPresenter presenter;
   late StreamController<String> emailErrorController;
+  late StreamController<String> passwordErrorController;
 
   Future<void> loadPage(WidgetTester tester) async {
     presenter = MockLoginPresenter();
     emailErrorController = StreamController<String>();
+    passwordErrorController = StreamController<String>();
     when(presenter.emailErrorStream)
         .thenAnswer((_) => emailErrorController.stream);
+    when(presenter.passwordErrorStream)
+        .thenAnswer((_) => passwordErrorController.stream);
     final loginPage = MaterialApp(
       home: LoginPage(
         presenter: presenter,
@@ -29,6 +33,7 @@ main() {
 
   tearDown(() {
     emailErrorController.close();
+    passwordErrorController.close();
   });
 
   testWidgets(
@@ -83,11 +88,38 @@ main() {
       await tester.pump();
 
       expect(
-          find.descendant(
-              of: find.bySemanticsLabel('Email'), matching: find.byType(Text)),
-          findsOneWidget,
-          reason:
-              'Quando o TextFormField tiver apenas um filho, quer dizer que não há erros, pois o prorio label é um filho');
+        find.descendant(
+            of: find.bySemanticsLabel('Email'), matching: find.byType(Text)),
+        findsOneWidget,
+      );
+    },
+  );
+
+  testWidgets(
+    'Should present error if password is invalid',
+    (WidgetTester tester) async {
+      await loadPage(tester);
+
+      passwordErrorController.add('any_errorInPassword');
+      await tester.pump();
+
+      expect(find.text('any_errorInPassword'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'Should present no error if password is invalid',
+    (WidgetTester tester) async {
+      await loadPage(tester);
+
+      passwordErrorController.add('');
+      await tester.pump();
+
+      expect(
+        find.descendant(
+            of: find.bySemanticsLabel('Senha'), matching: find.byType(Text)),
+        findsOneWidget,
+      );
     },
   );
 }
