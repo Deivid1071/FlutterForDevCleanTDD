@@ -3,13 +3,17 @@ import 'package:flutter_for_dev_dm/ui/page/login_page.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 main() {
+  Future<void> loadPage(WidgetTester tester) async {
+    final loginPage = MaterialApp(
+      home: LoginPage(),
+    );
+    await tester.pumpWidget(loginPage);
+  }
+
   testWidgets(
     'Should load with correct initial state',
     (WidgetTester tester) async {
-      final loginPage = MaterialApp(
-        home: LoginPage(),
-      );
-      await tester.pumpWidget(loginPage);
+      await loadPage(tester);
 
       final emailTextChildren = find.descendant(
           of: find.bySemanticsLabel('Email'), matching: find.byType(Text));
