@@ -12,33 +12,48 @@ class LoginPage extends StatelessWidget {
     return Scaffold(
       body: Builder(
         builder: (context) {
-          presenter?.isLoadingController.listen((isLoading) {
-            if (isLoading) {
-              showDialog(
-                context: context,
-                barrierDismissible: false,
-                builder: (context) => SimpleDialog(
-                  children: [
-                    Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        CircularProgressIndicator(),
-                        SizedBox(
-                          height: 10,
-                        ),
-                        Text(
-                          'Aguarde...',
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
-                    ),
-                  ],
+          presenter?.isLoadingController.listen(
+            (isLoading) {
+              if (isLoading) {
+                showDialog(
+                  context: context,
+                  barrierDismissible: false,
+                  builder: (context) => SimpleDialog(
+                    children: [
+                      Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          CircularProgressIndicator(),
+                          SizedBox(
+                            height: 10,
+                          ),
+                          Text(
+                            'Aguarde...',
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                );
+              } else {
+                if (Navigator.canPop(context)) {
+                  Navigator.pop(context);
+                }
+              }
+            },
+          );
+          presenter?.mainErrorController.listen((error) {
+            if (error.isNotEmpty) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  backgroundColor: Colors.red[900],
+                  content: Text(
+                    error,
+                    textAlign: TextAlign.center,
+                  ),
                 ),
               );
-            } else {
-              if (Navigator.canPop(context)) {
-                Navigator.pop(context);
-              }
             }
           });
           return SingleChildScrollView(
