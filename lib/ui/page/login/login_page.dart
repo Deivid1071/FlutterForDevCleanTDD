@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_for_dev_dm/ui/components/components.dart';
-import 'package:flutter_for_dev_dm/ui/page/login/login_presenter.dart';
+import 'package:flutter_for_dev_dm/ui/page/login/components/components.dart';
+import 'package:provider/provider.dart';
+import './login_presenter.dart';
+
+import 'components/email_input.dart';
 
 class LoginPage extends StatefulWidget {
   final LoginPresenter? presenter;
@@ -47,75 +51,29 @@ class _LoginPageState extends State<LoginPage> {
                 ),
                 Padding(
                   padding: const EdgeInsets.all(32),
-                  child: Form(
-                    child: Column(
-                      children: [
-                        Container(
-                          height: 40,
-                          child: StreamBuilder<String>(
-                              stream: widget.presenter?.emailErrorStream,
-                              builder: (context, snapshot) {
-                                return TextFormField(
-                                  decoration: InputDecoration(
-                                    labelText: 'Email',
-                                    errorText: snapshot.data?.isEmpty == true
-                                        ? null
-                                        : snapshot.data,
-                                    icon: Icon(
-                                      Icons.email,
-                                      color:
-                                          Theme.of(context).primaryColorLight,
-                                    ),
-                                  ),
-                                  keyboardType: TextInputType.emailAddress,
-                                  onChanged: widget.presenter?.validateEmail,
-                                );
-                              }),
-                        ),
-                        Container(
-                          height: 40,
-                          margin: EdgeInsets.only(top: 8, bottom: 32),
-                          child: StreamBuilder<String>(
-                              stream: widget.presenter?.passwordErrorStream,
-                              builder: (context, snapshot) {
-                                return TextFormField(
-                                  decoration: InputDecoration(
-                                    labelText: 'Senha',
-                                    errorText: snapshot.data?.isEmpty == true
-                                        ? null
-                                        : snapshot.data,
-                                    icon: Icon(
-                                      Icons.lock,
-                                      color:
-                                          Theme.of(context).primaryColorLight,
-                                    ),
-                                  ),
-                                  onChanged: widget.presenter?.validatePassword,
-                                  obscureText: true,
-                                );
-                              }),
-                        ),
-                        StreamBuilder<bool>(
-                            stream: widget.presenter?.isFormValidController,
-                            builder: (context, snapshot) {
-                              return RaisedButton(
-                                onPressed: snapshot.data == true
-                                    ? widget.presenter?.auth
-                                    : null,
-                                child: Text('Entrar'.toUpperCase()),
-                              );
-                            }),
-                        FlatButton(
-                          onPressed: () {},
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.person),
-                              Text('Criar conta'.toUpperCase())
-                            ],
+                  child: Provider(
+                    create: (context) => widget.presenter,
+                    child: Form(
+                      child: Column(
+                        children: [
+                          EmailInput(),
+                          Padding(
+                            padding: EdgeInsets.only(top: 8, bottom: 32),
+                            child: PasswordInput(),
                           ),
-                        ),
-                      ],
+                          LoginButton(),
+                          FlatButton(
+                            onPressed: () {},
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.person),
+                                Text('Criar conta'.toUpperCase())
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
